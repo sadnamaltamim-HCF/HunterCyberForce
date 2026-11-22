@@ -74,6 +74,7 @@ def main_menu():
     print(W + "  [06] " + C + "🛠️  Utility Tools" + RS)
     print(W + "  [07] " + C + "☁️  Tunnel Tools" + RS)
     print(W + "  [08] " + C + "📦 Package Manager" + RS)
+    print(W + "  [09] " + C + "🌍 IP Tracker (Advanced)" + RS)
     print(W + "  [00] " + R + "❌ Exit" + RS)
     print()
     return input(Y + "  HCF » " + RS).strip()
@@ -516,6 +517,220 @@ def menu_pkg():
             break
 
 # ══════════════════════════════════════════════════════════════════
+# [09] IP TRACKER (ADVANCED)
+# ══════════════════════════════════════════════════════════════════
+def menu_ip_tracker():
+    import json
+    import urllib.request
+    import urllib.error
+
+    def fetch_ip_info(ip):
+        try:
+            # Primary API
+            url = f"http://ip-api.com/json/{ip}?fields=status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,offset,currency,isp,org,as,asname,reverse,mobile,proxy,hosting,query"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=10) as r:
+                return json.loads(r.read().decode())
+        except:
+            return None
+
+    def fetch_ip_extra(ip):
+        try:
+            url = f"https://ipinfo.io/{ip}/json"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=10) as r:
+                return json.loads(r.read().decode())
+        except:
+            return None
+
+    def fetch_abuse(ip):
+        try:
+            url = f"https://api.abuseipdb.com/api/v2/check?ipAddress={ip}&maxAgeInDays=90"
+            return None  # Requires API key — skip silently
+        except:
+            return None
+
+    def display_result(data, extra):
+        print()
+        print(C + "  ╔══════════════════════════════════════════╗" + RS)
+        print(C + "  ║         🌍 IP TRACKER RESULT             ║" + RS)
+        print(C + "  ╚══════════════════════════════════════════╝" + RS)
+        print()
+
+        if data and data.get("status") == "success":
+            ip       = data.get("query", "N/A")
+            country  = data.get("country", "N/A")
+            cc       = data.get("countryCode", "")
+            region   = data.get("regionName", "N/A")
+            city     = data.get("city", "N/A")
+            district = data.get("district", "N/A")
+            zipcode  = data.get("zip", "N/A")
+            lat      = data.get("lat", "N/A")
+            lon      = data.get("lon", "N/A")
+            tz       = data.get("timezone", "N/A")
+            offset   = data.get("offset", "N/A")
+            currency = data.get("currency", "N/A")
+            isp      = data.get("isp", "N/A")
+            org      = data.get("org", "N/A")
+            asn      = data.get("as", "N/A")
+            asname   = data.get("asname", "N/A")
+            reverse  = data.get("reverse", "N/A")
+            mobile   = "📱 Yes" if data.get("mobile") else "🖥️ No"
+            proxy    = "⚠️ Yes" if data.get("proxy") else "✅ No"
+            hosting  = "☁️ Yes" if data.get("hosting") else "✅ No"
+            continent= data.get("continent", "N/A")
+
+            print(Y  + f"  {'TARGET IP':<18}: " + W + ip + RS)
+            print()
+            print(G  + "  ── 📍 Location ──────────────────────────" + RS)
+            print(W  + f"  {'Continent':<18}: " + C + f"{continent}" + RS)
+            print(W  + f"  {'Country':<18}: " + C + f"{country} [{cc}]" + RS)
+            print(W  + f"  {'Region':<18}: " + C + region + RS)
+            print(W  + f"  {'City':<18}: " + C + city + RS)
+            print(W  + f"  {'District':<18}: " + C + district + RS)
+            print(W  + f"  {'ZIP Code':<18}: " + C + zipcode + RS)
+            print(W  + f"  {'Latitude':<18}: " + C + str(lat) + RS)
+            print(W  + f"  {'Longitude':<18}: " + C + str(lon) + RS)
+            print(W  + f"  {'Timezone':<18}: " + C + tz + RS)
+            print(W  + f"  {'UTC Offset':<18}: " + C + str(offset) + RS)
+            print(W  + f"  {'Currency':<18}: " + C + currency + RS)
+            print()
+            print(G  + "  ── 🌐 Network ───────────────────────────" + RS)
+            print(W  + f"  {'ISP':<18}: " + C + isp + RS)
+            print(W  + f"  {'Organization':<18}: " + C + org + RS)
+            print(W  + f"  {'ASN':<18}: " + C + asn + RS)
+            print(W  + f"  {'AS Name':<18}: " + C + asname + RS)
+            print(W  + f"  {'Reverse DNS':<18}: " + C + reverse + RS)
+            print()
+            print(G  + "  ── 🔍 Detection ─────────────────────────" + RS)
+            print(W  + f"  {'Mobile':<18}: " + C + mobile + RS)
+            print(W  + f"  {'Proxy/VPN':<18}: " + C + proxy + RS)
+            print(W  + f"  {'Hosting/DC':<18}: " + C + hosting + RS)
+            print()
+
+            # Google Maps link
+            print(G  + "  ── 🗺️  Map Link ──────────────────────────" + RS)
+            print(W  + f"  https://www.google.com/maps?q={lat},{lon}" + RS)
+            print()
+
+        elif data and data.get("status") == "fail":
+            print(R + f"  [✗] Error: {data.get('message', 'Unknown error')}" + RS)
+        else:
+            print(R + "  [✗] Could not fetch data. Check internet." + RS)
+
+        # Extra info from ipinfo.io
+        if extra:
+            hostname = extra.get("hostname", "N/A")
+            bogon    = extra.get("bogon", False)
+            if hostname != "N/A" or bogon:
+                print(G + "  ── 📡 Extra Info ────────────────────────" + RS)
+                if hostname != "N/A":
+                    print(W + f"  {'Hostname':<18}: " + C + hostname + RS)
+                if bogon:
+                    print(R + f"  {'Bogon IP':<18}: " + C + "Yes (Private/Reserved)" + RS)
+                print()
+
+    while True:
+        banner()
+        print(Y + "  ══ 🌍 IP TRACKER (ADVANCED) ══" + RS)
+        print()
+        print(W + "  [1] " + C + "Track Single IP" + RS)
+        print(W + "  [2] " + C + "Track Multiple IPs (from file)" + RS)
+        print(W + "  [3] " + C + "My Public IP Info" + RS)
+        print(W + "  [4] " + C + "IP to Location (Quick)" + RS)
+        print(W + "  [5] " + C + "Bulk IP Scan (manual list)" + RS)
+        print(W + "  [0] " + R + "Back" + RS)
+        print()
+        ch = input(Y + "  HCF/IPTracker » " + RS).strip()
+
+        if ch == "1":
+            ip = input(C + "  Enter IP Address: " + RS).strip()
+            if not ip:
+                print(R + "  [!] No IP entered!" + RS)
+                pause()
+                continue
+            print(Y + f"\n  [*] Tracking {ip}..." + RS)
+            data  = fetch_ip_info(ip)
+            extra = fetch_ip_extra(ip)
+            display_result(data, extra)
+            # Save option
+            save = input(Y + "  Save result to file? [y/N]: " + RS).strip().lower()
+            if save == "y":
+                fname = f"ip_result_{ip.replace('.','_')}.txt"
+                with open(fname, "w") as f:
+                    if data:
+                        for k, v in data.items():
+                            f.write(f"{k}: {v}\n")
+                print(G + f"  Saved to {fname}" + RS)
+            pause()
+
+        elif ch == "2":
+            fpath = input(C + "  File path (one IP per line): " + RS).strip()
+            try:
+                with open(fpath) as f:
+                    ips = [line.strip() for line in f if line.strip()]
+                for ip in ips:
+                    print(Y + f"\n  [*] Tracking {ip}..." + RS)
+                    data  = fetch_ip_info(ip)
+                    extra = fetch_ip_extra(ip)
+                    display_result(data, extra)
+                    time.sleep(1.5)  # Rate limit respect
+            except FileNotFoundError:
+                print(R + "  [!] File not found!" + RS)
+            pause()
+
+        elif ch == "3":
+            print(Y + "\n  [*] Fetching your public IP..." + RS)
+            try:
+                req = urllib.request.Request(
+                    "https://api.ipify.org",
+                    headers={"User-Agent": "Mozilla/5.0"}
+                )
+                with urllib.request.urlopen(req, timeout=10) as r:
+                    my_ip = r.read().decode().strip()
+                print(G + f"\n  Your Public IP: {my_ip}" + RS)
+                data  = fetch_ip_info(my_ip)
+                extra = fetch_ip_extra(my_ip)
+                display_result(data, extra)
+            except:
+                print(R + "  [!] Could not fetch IP. Check internet." + RS)
+            pause()
+
+        elif ch == "4":
+            ip = input(C + "  Enter IP: " + RS).strip()
+            print(Y + f"\n  [*] Quick lookup for {ip}..." + RS)
+            data = fetch_ip_info(ip)
+            if data and data.get("status") == "success":
+                print(G + f"\n  IP       : {data.get('query')}" + RS)
+                print(G + f"  Country  : {data.get('country')} [{data.get('countryCode')}]" + RS)
+                print(G + f"  City     : {data.get('city')}, {data.get('regionName')}" + RS)
+                print(G + f"  ISP      : {data.get('isp')}" + RS)
+                print(G + f"  Lat/Lon  : {data.get('lat')}, {data.get('lon')}" + RS)
+                print(G + f"  Map      : https://www.google.com/maps?q={data.get('lat')},{data.get('lon')}" + RS)
+            else:
+                print(R + "  [!] Lookup failed!" + RS)
+            pause()
+
+        elif ch == "5":
+            print(C + "  Enter IPs one by one (blank line to stop):" + RS)
+            ips = []
+            while True:
+                ip = input(C + f"  IP [{len(ips)+1}]: " + RS).strip()
+                if not ip:
+                    break
+                ips.append(ip)
+            for ip in ips:
+                print(Y + f"\n  [*] Tracking {ip}..." + RS)
+                data  = fetch_ip_info(ip)
+                extra = fetch_ip_extra(ip)
+                display_result(data, extra)
+                time.sleep(1.5)
+            pause()
+
+        elif ch == "0":
+            break
+
+# ══════════════════════════════════════════════════════════════════
 # MAIN
 # ══════════════════════════════════════════════════════════════════
 def main():
@@ -528,6 +743,7 @@ def main():
         "6": menu_utility,
         "7": menu_tunnel,
         "8": menu_pkg,
+        "9": menu_ip_tracker,
     }
 
     while True:
