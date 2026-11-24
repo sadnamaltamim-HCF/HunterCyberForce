@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# ================================================================
 #   HUNTER CYBER FORCE — Custom Banner Maker
 #   Author  : HCF Team
 #   Version : 1.0
@@ -213,7 +211,267 @@ def push_to_github():
         cd {repo_path} &&
         git add . &&
         git commit -m "Update: banner_maker.py" &&
-        git push origin main
+        git push origin main#!/usr/bin/env python3
+# ================================================================
+#   HUNTER CYBER FORCE — Custom Banner Maker
+#   Author  : HCF Team
+#   Version : 2.0 (Termux Optimized)
+# ================================================================
+
+import os
+import sys
+import time
+import subprocess
+
+RS = "\033[0m"
+R  = "\033[0;31m"
+G  = "\033[0;32m"
+Y  = "\033[1;33m"
+C  = "\033[0;36m"
+W  = "\033[1;37m"
+M  = "\033[0;35m"
+B  = "\033[0;34m"
+
+RAINBOW = [R, Y, G, C, B, M]
+
+COLORS = {
+    "1": (R,  "Red"),
+    "2": (G,  "Green"),
+    "3": (C,  "Cyan"),
+    "4": (Y,  "Yellow"),
+    "5": (M,  "Magenta"),
+    "6": (B,  "Blue"),
+    "7": (W,  "White"),
+    "8": ("RAINBOW", "Rainbow 🌈"),
+}
+
+# Termux-friendly figlet fonts (tested)
+FONTS = {
+    "1": "small",
+    "2": "banner",
+    "3": "block",
+    "4": "bubble",
+    "5": "digital",
+    "6": "lean",
+    "7": "mini",
+    "8": "script",
+    "9": "shadow",
+    "10": "slant",
+}
+
+FONT_LABELS = {
+    "1": "Small (Recommended ✅)",
+    "2": "Banner",
+    "3": "Block",
+    "4": "Bubble",
+    "5": "Digital",
+    "6": "Lean",
+    "7": "Mini",
+    "8": "Script",
+    "9": "Shadow",
+    "10": "Slant",
+}
+
+def clear():
+    os.system("clear")
+
+def pause():
+    input(Y + "\n  [↵] Press Enter to continue..." + RS)
+
+def hcf_header():
+    clear()
+    print(R + "  ██╗  ██╗ ██████╗███████╗" + RS)
+    print(R + "  ██║  ██║██╔════╝██╔════╝" + RS)
+    print(R + "  ███████║██║     █████╗  " + RS)
+    print(R + "  ██╔══██║██║     ██╔══╝  " + RS)
+    print(R + "  ██║  ██║╚██████╗██║     " + RS)
+    print(R + "  ╚═╝  ╚═╝ ╚═════╝╚═╝    " + RS)
+    print(C + "  ══ Banner Maker v2.0 ══" + RS)
+    print()
+
+def get_figlet(name, font):
+    try:
+        result = subprocess.run(
+            ["figlet", "-f", font, name],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout
+    except:
+        pass
+    # Fallback
+    try:
+        result = subprocess.run(
+            ["figlet", "-f", "small", name],
+            capture_output=True, text=True
+        )
+        return result.stdout
+    except:
+        return name
+
+def apply_color(text, color_key):
+    if color_key == "8":
+        lines = text.split("\n")
+        result = ""
+        for i, line in enumerate(lines):
+            result += RAINBOW[i % len(RAINBOW)] + line + RS + "\n"
+        return result
+    else:
+        color = COLORS[color_key][0]
+        return color + text + RS
+
+def preview(name, font_key, color_key, subtitle, tagline):
+    clear()
+    font = FONTS.get(font_key, "small")
+    art  = get_figlet(name, font)
+    colored = apply_color(art, color_key)
+
+    print()
+    print(colored)
+
+    if subtitle:
+        if color_key == "8":
+            print(C + f"  {subtitle}" + RS)
+        else:
+            print(COLORS[color_key][0] + f"  {subtitle}" + RS)
+
+    if tagline:
+        print(W + f"  {tagline}" + RS)
+    print()
+
+def save_banner(name, font_key, color_key, subtitle, tagline):
+    font = FONTS.get(font_key, "small")
+    art  = get_figlet(name, font)
+
+    lines = []
+    lines.append('echo ""')
+
+    if color_key == "8":
+        art_lines = art.split("\n")
+        for i, line in enumerate(art_lines):
+            c = RAINBOW[i % len(RAINBOW)]
+            escaped = line.replace("\\", "\\\\").replace("'", "'\\''")
+            lines.append(f"printf '{c}{escaped}{RS}\\n'")
+    else:
+        color = COLORS[color_key][0]
+        for line in art.split("\n"):
+            escaped = line.replace("\\", "\\\\").replace("'", "'\\''")
+            lines.append(f"printf '{color}{escaped}{RS}\\n'")
+
+    if subtitle:
+        c = COLORS.get(color_key, (C,))[0] if color_key != "8" else C
+        lines.append(f"printf '{c}  {subtitle}{RS}\\n'")
+
+    if tagline:
+        lines.append(f"printf '{W}  {tagline}{RS}\\n'")
+
+    lines.append('echo ""')
+
+    banner_block = "\n".join(lines)
+
+    # Find rc file
+    rc_files = [
+        os.path.expanduser("~/.zshrc"),
+        os.path.expanduser("~/.bashrc"),
+    ]
+
+    saved = False
+    for rc_path in rc_files:
+        if os.path.exists(rc_path):
+            with open(rc_path, "r") as f:
+                content = f.read()
+
+            # Remove old HCF banner
+            if "# HCF-BANNER-START" in content:
+                start = content.find("# HCF-BANNER-START")
+                end   = content.find("# HCF-BANNER-END")
+                if end != -1:
+                    content = content[:start] + content[end+16:]
+
+            content += f"\n# HCF-BANNER-START\n{banner_block}\n# HCF-BANNER-END\n"
+
+            with open(rc_path, "w") as f:
+                f.write(content)
+
+            print(G + f"  [✓] Saved to {rc_path}" + RS)
+            saved = True
+            break
+
+    if not saved:
+        rc_path = os.path.expanduser("~/.bashrc")
+        with open(rc_path, "w") as f:
+            f.write(f"# HCF-BANNER-START\n{banner_block}\n# HCF-BANNER-END\n")
+        print(G + f"  [✓] Created ~/.bashrc with banner" + RS)
+
+def push_github():
+    print(Y + "\n  [*] Pushing to GitHub..." + RS)
+    repo = os.path.expanduser("~/HunterCyberForce")
+    if not os.path.exists(repo):
+        print(R + "  [!] HunterCyberForce folder not found!" + RS)
+        return
+    os.system(f"cp {os.path.abspath(__file__)} {repo}/banner_maker.py")
+    os.system(f'cd {repo} && git add . && git commit -m "Update: banner_maker.py" && git push origin main')
+    print(G + "  [✓] Pushed!" + RS)
+
+def main():
+    hcf_header()
+
+    # Name
+    print(Y + "  ━━━ Step 1: Name ━━━" + RS)
+    name = input(C + "  Your name: " + RS).strip() or "HCF"
+
+    # Font
+    print()
+    print(Y + "  ━━━ Step 2: Font ━━━" + RS)
+    for k, label in FONT_LABELS.items():
+        print(W + f"  [{k:>2}] " + C + label + RS)
+    font_key = input(C + "\n  Choice [1-10]: " + RS).strip()
+    if font_key not in FONTS:
+        font_key = "1"
+
+    # Color
+    print()
+    print(Y + "  ━━━ Step 3: Color ━━━" + RS)
+    for k, (_, label) in COLORS.items():
+        print(W + f"  [{k}] " + C + label + RS)
+    color_key = input(C + "\n  Choice [1-8]: " + RS).strip()
+    if color_key not in COLORS:
+        color_key = "3"
+
+    # Subtitle
+    print()
+    print(Y + "  ━━━ Step 4: Subtitle (optional) ━━━" + RS)
+    subtitle = input(C + "  Subtitle: " + RS).strip()
+
+    # Tagline
+    print()
+    print(Y + "  ━━━ Step 5: Tagline (optional) ━━━" + RS)
+    tagline = input(C + "  Tagline: " + RS).strip()
+
+    # Preview
+    print(Y + "\n  [*] Preview loading..." + RS)
+    time.sleep(0.5)
+    preview(name, font_key, color_key, subtitle, tagline)
+
+    confirm = input(Y + "  Set as Termux banner? [y/N]: " + RS).strip().lower()
+    if confirm == "y":
+        save_banner(name, font_key, color_key, subtitle, tagline)
+        print()
+        print(G + "  ╔══════════════════════════════════╗" + RS)
+        print(G + "  ║  Done! Restart Termux to see it  ║" + RS)
+        print(G + "  ╚══════════════════════════════════╝" + RS)
+        print()
+        push = input(Y + "  Push to GitHub? [y/N]: " + RS).strip().lower()
+        if push == "y":
+            push_github()
+    else:
+        print(R + "\n  Cancelled." + RS)
+
+    pause()
+
+if __name__ == "__main__":
+    main()
+
     """)
     print(G + "  [✓] Pushed to GitHub!" + RS)
 
@@ -250,40 +508,4 @@ def main():
 
     # ── Step 4: Subtitle ─────────────────────────────────────────
     print()
-    print(Y + "  ━━━ Step 4: Subtitle (optional) ━━━" + RS)
-    print(W + "  Example: Hunter Cyber Force Member" + RS)
-    subtitle = input(C + "  Subtitle (Enter to skip): " + RS).strip()
-
-    # ── Step 5: Tagline ──────────────────────────────────────────
-    print()
-    print(Y + "  ━━━ Step 5: Tagline (optional) ━━━" + RS)
-    print(W + "  Example: Stay Sharp. Stay Silent. 🔴" + RS)
-    tagline = input(C + "  Tagline (Enter to skip): " + RS).strip()
-
-    # ── Preview ──────────────────────────────────────────────────
-    print()
-    print(Y + "  [*] Preview:" + RS)
-    time.sleep(0.5)
-    preview_banner(name, font_key, color_key, subtitle, tagline)
-
-    # ── Confirm ──────────────────────────────────────────────────
-    confirm = input(Y + "  Set this as your Termux banner? [y/N]: " + RS).strip().lower()
-    if confirm == "y":
-        save_banner(name, font_key, color_key, subtitle, tagline)
-        print()
-        print(G + "  ╔══════════════════════════════════════╗" + RS)
-        print(G + "  ║   Banner Set! Restart Termux to see  ║" + RS)
-        print(G + "  ╚══════════════════════════════════════╝" + RS)
-        print()
-
-        # Push to GitHub option
-        push = input(Y + "  Push to GitHub? [y/N]: " + RS).strip().lower()
-        if push == "y":
-            push_to_github()
-    else:
-        print(R + "\n  Cancelled." + RS)
-
-    pause()
-
-if __name__ == "__main__":
-    main()
+    print(Y + "  ━━━ Step 4: Subti
